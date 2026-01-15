@@ -10,4 +10,5 @@
 
 # Configs
 *.toml
+!src/main/resources/META-INF/mods.toml
 *.log

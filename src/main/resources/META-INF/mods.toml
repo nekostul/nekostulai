@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId = "nekostulai"
+version = "4.0"
+displayName = "nekostulAI"
+logoFile="logo.png"
+authors = "nekostul"
+description = '''
+An AI assistant stuck in your Minecraft world.
+Explains mods, answers questions,
+and questions every single decision you make.
+
+-- RU
+ИИ-помощник, застрявший в твоём мире Minecraft.
+Объясняет моды, отвечает на вопросы
+и каждый раз задаётся вопросом, какого хуя ты вообще так играешь.
+'''
+
+[[dependencies.nekostulai]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.nekostulai]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,)"
+ordering="NONE"
+side="BOTH"
