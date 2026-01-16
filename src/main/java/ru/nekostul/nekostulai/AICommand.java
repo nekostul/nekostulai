@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
@@ -19,6 +20,7 @@ import net.minecraftforge.forgespi.language.IModInfo;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import ru.nekostul.nekostulai.ai.AIContext;
 import ru.nekostul.nekostulai.ai.AIManager;
+import ru.nekostul.nekostulai.ai.nekostuloffline.nekostulClient;
 import ru.nekostul.nekostulai.client.gui.AIScreen;
 
 import java.util.*;
@@ -311,7 +313,27 @@ public class AICommand {
                             return 1;
                         })
                         );
-    }
+            dispatcher.register(
+                    Commands.literal("ai")
+                            .then(Commands.argument("text", StringArgumentType.greedyString())
+                                    .executes(ctx -> {
+                                        String text = StringArgumentType.getString(ctx, "text");
+                                        Player player = ctx.getSource().getPlayerOrException();
+
+                                        String reply = nekostulClient.respond(
+                                                player.getName().getString(),
+                                                text
+                                        );
+
+                                        player.sendSystemMessage(
+                                                Component.literal("§6[nekostulAI] §f" + reply)
+                                        );
+
+                                        return 1;
+                                    })
+                            )
+            );
+        }
     private static String askGemini(String apiKey, String question) {
 
         Proxy proxy = Proxy.NO_PROXY;
