@@ -1,17 +1,17 @@
 package ru.nekostul.nekostulai.ai;
 
-import ru.nekostul.nekostulai.ai.gemini.GeminiClient;
+import net.minecraft.server.level.ServerPlayer;
 import ru.nekostul.nekostulai.ai.alice.AliceClient;
+import ru.nekostul.nekostulai.ai.gemini.GeminiClient;
 
 import java.util.concurrent.CompletableFuture;
 
 public class AIManager {
 
-    // 🔥 ASYNC версия (настоящая)
-    public static CompletableFuture<String> askAsync(String prompt) {
+    public static CompletableFuture<String> askAsync(ServerPlayer player, String prompt) {
         return CompletableFuture.supplyAsync(() -> {
 
-            // 1. Gemini
+            // 1. Пробуем Gemini (если есть)
             try {
                 String gemini = GeminiClient.ask(prompt);
                 if (isValid(gemini)) {
@@ -20,25 +20,29 @@ public class AIManager {
                 }
             } catch (Exception ignored) {}
 
-            // 2. Alice / YandexGPT
+            // 2. Пробуем Alice (ТУТ ЛИМИТ)
             try {
-                String alice = AliceClient.ask(prompt);
+                String alice = AliceClient.ask(player, prompt);
                 if (isValid(alice)) {
                     AIContext.addAI(alice);
                     return alice;
                 }
+
+                if ("__DAILY_LIMIT__".equals(alice)) {
+                    return "__DAILY_LIMIT__";
+                }
+
             } catch (Exception ignored) {}
 
-            // 3. Никто не ответил
-            String noResponse = "Я чёт туплю… попробуй ещё раз 😿";
+            // 3. Фолбэк
+            String noResponse = "Я чёт туплю… попробуй ещё раз 🐱";
             AIContext.addAI(noResponse);
             return noResponse;
         });
     }
 
-    // 🧠 SYNC обёртка (чтобы /ai ask НЕ ЛОМАТЬ)
-    public static String ask(String prompt) {
-        return askAsync(prompt).join(); // <- ВАЖНО
+    public static String ask(ServerPlayer player, String prompt) {
+        return askAsync(player, prompt).join(); // <- синхронно
     }
 
     private static boolean isValid(String text) {

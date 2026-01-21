@@ -1,19 +1,31 @@
 package ru.nekostul.nekostulai.ai.alice;
 
 import com.google.gson.*;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 public class AliceClient {
+    private static int requestsToday = 0;
+    private static long lastResetDay = 0;
 
     private static final String ENDPOINT =
             "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
 
-    public static String ask(String prompt) {
+    public static String ask(ServerPlayer player, String prompt) {
 
         try {
+            int limit = AliceConfig.COMMON.DAILY_LIMIT.get();
+            UUID uuid = player.getUUID();
+
+            if (!DailyUsageTracker.canUse(uuid, limit)) {
+                return "__DAILY_LIMIT__";
+            }
             URL url = new URL(ENDPOINT);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
@@ -28,7 +40,7 @@ public class AliceClient {
             JsonObject body = new JsonObject();
             body.addProperty(
                     "modelUri",
-                    "gpt://" + AliceConfig.COMMON.FOLDER_ID.get() + "/yandexgpt/latest"
+                    "gpt://" + AliceConfig.COMMON.FOLDER_ID.get() + "/" + AliceConfig.COMMON.MODEL.get()
             );
 
             JsonObject options = new JsonObject();
@@ -42,9 +54,10 @@ public class AliceClient {
             system.addProperty("role", "system");
             system.addProperty("text",
                     "Ты мой друг и напарник в Minecraft. " +
+                            "Тебя зовут nekostulAI. " +
                             "Общайся неформально, по-дружески. " +
                             "Можно использовать разговорные фразы вроде: " +
-                            "«здарова», «чем помочь?», «ща разберёмся». " +
+                            "«здарова», «чем помочь?», «ща разберёмся», «брат». " +
                             "Отвечай коротко и по делу, без официоза.");
             messages.add(system);
 
@@ -62,6 +75,8 @@ public class AliceClient {
             InputStream is = con.getResponseCode() >= 400
                     ? con.getErrorStream()
                     : con.getInputStream();
+
+            DailyUsageTracker.markUsed(uuid);
 
             String response = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
