@@ -11,8 +11,6 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import ru.nekostul.nekostulai.ai.alice.AliceConfig;
 import ru.nekostul.nekostulai.bugreport.BugReportCooldown;
-import ru.nekostul.nekostulai.nekostulnpc.ModNPCEntities;
-import ru.nekostul.nekostulai.nekostulnpc.follow.NPCChatReplyQueue;
 
 @Mod("nekostulai")
 public class nekostulAI {
@@ -34,10 +32,7 @@ public class nekostulAI {
                 .getModEventBus()
                 .addListener(this::onCommonSetup);
 
-        ModNPCEntities.register(FMLJavaModLoadingContext.get().getModEventBus());
-
         MinecraftForge.EVENT_BUS.register(this);
-        System.out.println("nekostuAI loaded");
     }
 
     @SubscribeEvent

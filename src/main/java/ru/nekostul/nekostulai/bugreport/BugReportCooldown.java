@@ -28,6 +28,11 @@ public class BugReportCooldown {
             if (!Files.exists(FILE)) return;
 
             String json = Files.readString(FILE);
+            json = json
+                    .replace("```json", "")
+                    .replace("```", "")
+                    .trim();
+
             JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
 
             for (String key : obj.keySet()) {
