@@ -4,7 +4,7 @@ license="All Rights Reserved"
 
 [[mods]]
 modId = "nekostulai"
-version = "4.3"
+version = "4.2"
 displayName = "nekostulAI"
 logoFile="logo.png"
 authors = "nekostul"
