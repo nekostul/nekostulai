@@ -1,8 +1,6 @@
 package ru.nekostul.nekostulai;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -17,7 +15,6 @@ import ru.nekostul.nekostulai.ai.AIManager;
 import ru.nekostul.nekostulai.ai.PlayerContext;
 import ru.nekostul.nekostulai.ai.nekostuloffline.nekostulClient;
 import ru.nekostul.nekostulai.bugreport.BugReportService;
-import ru.nekostul.nekostulai.client.gui.AIScreen;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 
@@ -41,7 +38,6 @@ public class AICommand {
     private static final Set<UUID> AI_CD_SHOWN = new HashSet<>();
     private static final Map<UUID, Long> AI_LAST_USE = new HashMap<>();
     private static final Set<UUID> AI_CD_WARNED = new HashSet<>();
-
     private static final Random RANDOM = new Random();
     private static String lastQuestion = null;
     private static String lastAnswer = null;
@@ -501,12 +497,7 @@ public class AICommand {
                                             return 1;
                                         })
                         )
-                        .executes(ctx -> {
-                            Minecraft mc = Minecraft.getInstance();
-                            mc.execute(() -> mc.setScreen(new AIScreen()));
-                            return 1;
-                        })
-                        );
+        );
             dispatcher.register(
                     Commands.literal("ai")
                             .then(Commands.argument("text", StringArgumentType.greedyString())
@@ -567,7 +558,6 @@ public class AICommand {
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             con.setDoOutput(true);
-
             String body = """
         {
           "contents": [

@@ -1,10 +1,10 @@
 modLoader="javafml"
 loaderVersion="[47,)"
-license="All Rights Reserved"
+license="MIT"
 
 [[mods]]
 modId = "nekostulai"
-version = "4.2"
+version = "4.3"
 displayName = "nekostulAI"
 logoFile="logo.png"
 authors = "nekostul"
