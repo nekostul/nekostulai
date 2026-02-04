@@ -8,7 +8,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import ru.nekostul.nekostulai.ai.alice.AliceConfig;
 import ru.nekostul.nekostulai.bugreport.BugReportCooldown;
 
 @Mod("nekostulai")
@@ -22,11 +21,6 @@ public class nekostulAI {
                 nekostulAIConfig.COMMON_SPEC
         );
 
-        ModLoadingContext.get().registerConfig(
-                ModConfig.Type.COMMON,
-                AliceConfig.COMMON_SPEC,
-                "nekostulai-alice.toml"
-        );
         FMLJavaModLoadingContext.get()
                 .getModEventBus()
                 .addListener(this::onCommonSetup);

@@ -1,6 +1,7 @@
 package ru.nekostul.nekostulai;
 
 import net.minecraftforge.common.ForgeConfigSpec;
+import ru.nekostul.nekostulai.ai.alice.AliceConfig;
 
 public class nekostulAIConfig {
 
@@ -10,6 +11,7 @@ public class nekostulAIConfig {
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         COMMON = new Common(builder);
+        AliceConfig.init(builder);
         COMMON_SPEC = builder.build();
     }
 

@@ -4,14 +4,10 @@ import net.minecraftforge.common.ForgeConfigSpec;
 
 public class AliceConfig {
 
-    public static final ForgeConfigSpec COMMON_SPEC;
-    public static final Common COMMON;
+    public static Common COMMON;
 
-
-    static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+    public static void init(ForgeConfigSpec.Builder builder) {
         COMMON = new Common(builder);
-        COMMON_SPEC = builder.build();
     }
 
     public static class Common {
