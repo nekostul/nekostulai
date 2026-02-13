@@ -1,255 +1,403 @@
 package ru.nekostul.nekostulai.ai.nekostuloffline;
 
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.network.chat.*;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.server.ServerLifecycleHooks;
+
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class CraftHelper {
 
-    private static final Map<String, String> RECIPES = new HashMap<>();
+    private static final String[] CRAFT_PREFIXES = {
+            "craft ",
+            "recipe ",
+            "\u043a\u0430\u043a \u0441\u043a\u0440\u0430\u0444\u0442\u0438\u0442\u044c ",
+            "\u043a\u0430\u043a \u0441\u0434\u0435\u043b\u0430\u0442\u044c ",
+            "\u0441\u043a\u0440\u0430\u0444\u0442\u0438\u0442\u044c ",
+            "\u043a\u0440\u0430\u0444\u0442 ",
+            "\u0440\u0435\u0446\u0435\u043f\u0442 "
+    };
 
-    static {
-        put("факел", "палка снизу, уголь или древесный уголь сверху.");
-        put("верстак", "4 доски в квадрате 2x2.");
-        put("печь", "8 булыжника по кругу, центр пустой.");
-        put("сундук", "8 досок по кругу, центр пустой.");
-        put("кровать", "3 доски снизу, 3 шерсти сверху.");
-        put("палка", "2 доски вертикально.");
-        put("деревянная кирка", "3 доски сверху, 2 палки по центру.");
-        put("каменная кирка", "3 булыжника сверху, 2 палки по центру.");
-        put("железная кирка", "3 железных слитка сверху, 2 палки по центру.");
-        put("алмазная кирка", "3 алмаза сверху, 2 палки по центру.");
-        put("дверь деревянная", "6 досок, 3 сверху, 3 снизу.");
-        put("дверь железная", "6 железных слитков, 3 сверху, 3 снизу.");
-        put("люк", "6 досок, 2 ряда по 3.");
-        put("люк железный", "4 железных слитка в квадрате 2x2.");
-        put("забор", "4 палки, 2 доски по центру.");
-        put("заборные ворота", "4 палки по бокам, 2 доски по центру.");
-        put("лестница", "6 досок, 3 ряда по 2.");
-        put("плита", "3 блока в ряд.");
-        put("факел редстоуновый", "1 палка снизу, 1 редстоун сверху.");
-        put("фонарь", "8 железных самородков по кругу, факел по центру.");
-        put("цепь", "2 железных самородка сверху и снизу, слиток по центру.");
-        put("сундук-ловушка", "сундук, нажимная плита сверху.");
-        put("бочка", "6 досок по бокам, 2 плиты сверху и снизу.");
-        put("кафедра", "4 плиты, 1 книжная полка сверху.");
-        put("книжная полка", "3 книги по центру, 6 досок сверху и снизу.");
-        put("стол зачарований", "2 алмаза, 4 обсидиана, 1 книга сверху.");
-        put("наковальня", "3 железных блока сверху, 1 слиток по центру, 3 слитка снизу.");
-        put("точило", "2 палки по бокам, плита сверху, каменная плита снизу.");
-        put("каменорез", "1 железный слиток сверху, 3 камня снизу.");
-        put("плавильная печь", "5 железных слитков, печь по центру.");
-        put("коптильня", "печь по центру, 4 бревна по бокам.");
-        put("верстак картографа", "2 бумаги сверху, верстак снизу.");
-        put("верстак лучника", "3 палки по бокам, 2 доски сверху.");
-        put("верстак кожевника", "котёл сверху, 2 доски снизу.");
-        put("верстак каменщика", "каменная плита сверху, верстак снизу.");
-        put("верстак кузнеца", "2 железных слитка сверху, 4 доски снизу.");
-        put("верстак ткача", "2 нити сверху, 2 доски снизу.");
-        put("верстак компостера", "7 плит по кругу.");
-        put("компостер", "7 плит по кругу.");
-        put("котёл", "7 железных слитков по форме U.");
-        put("ведро", "3 железных слитка по форме V.");
-        put("ведро воды", "ведро, наполненное водой.");
-        put("ведро лавы", "ведро, наполненное лавой.");
-        put("часы", "4 золотых слитка вокруг редстоуна.");
-        put("компас", "4 железных слитка вокруг редстоуна.");
-        put("карта", "8 бумаг вокруг компаса.");
-        put("пустая карта", "8 бумаг.");
-        put("ножницы", "2 железных слитка по диагонали.");
-        put("огниво", "1 железный слиток, 1 кремень.");
-        put("лук", "3 палки дугой, 3 нити.");
-        put("арбалет", "3 палки, 2 нити, 1 железный слиток.");
-        put("стрела", "кремень сверху, палка по центру, перо снизу.");
-        put("фейерверк", "бумага и порох.");
-        put("ракетница", "1 фейерверк.");
-        put("щит", "6 досок, 1 железный слиток сверху.");
-        put("шлем кожаный", "5 кожи.");
-        put("нагрудник кожаный", "8 кожи.");
-        put("поножи кожаные", "7 кожи.");
-        put("ботинки кожаные", "4 кожи.");
-        put("шлем железный", "5 железных слитков.");
-        put("нагрудник железный", "8 железных слитков.");
-        put("поножи железные", "7 железных слитков.");
-        put("ботинки железные", "4 железных слитка.");
-        put("шлем алмазный", "5 алмазов.");
-        put("нагрудник алмазный", "8 алмазов.");
-        put("поножи алмазные", "7 алмазов.");
-        put("ботинки алмазные", "4 алмаза.");
-        put("шлем незеритовый", "алмазный шлем, незеритовый слиток.");
-        put("нагрудник незеритовый", "алмазный нагрудник, незеритовый слиток.");
-        put("поножи незеритовые", "алмазные поножи, незеритовый слиток.");
-        put("ботинки незеритовые", "алмазные ботинки, незеритовый слиток.");
-        put("кровать", "3 доски снизу, 3 шерсти сверху.");
-        put("табличка", "6 досок, 1 палка снизу.");
-        put("рамка", "8 палок вокруг кожи.");
-        put("картина", "8 палок вокруг шерсти.");
-        put("рычаг", "палка сверху, булыжник снизу.");
-        put("кнопка", "1 блок.");
-        put("нажимная плита", "2 блока в ряд.");
-        put("редстоун-факел", "редстоун сверху, палка снизу.");
-        put("повторитель", "2 редстоун-факела, 3 камня, 1 редстоун.");
-        put("компаратор", "3 редстоун-факела, 3 камня, 1 кварц.");
-        put("липкий поршень", "поршень, слизь.");
-        put("поршень", "3 доски сверху, 4 булыжника, 1 железо, 1 редстоун.");
-        put("воронка", "5 железных слитков, сундук по центру.");
-        put("раздатчик", "лук по центру, 7 булыжника, 1 редстоун.");
-        put("выбрасыватель", "7 булыжника, 1 редстоун.");
-        put("наблюдатель", "6 булыжника, 2 редстоуна, 1 кварц.");
-        put("датчик дневного света", "3 стекла, 3 кварца, 3 деревянные плиты.");
-        put("лампа редстоуновая", "4 светокамня, 4 редстоуна.");
-        put("маяк", "5 стекла, 3 обсидиана, звезда незера.");
-        put("кондуит", "8 раковин наутилуса, сердце моря.");
-        put("якорь возрождения", "6 плачущего обсидиана, 3 светокамня.");
-        put("щиток", "медный слиток, соты.");
-        put("лодка", "5 досок, форма U.");
-        put("лодка с сундуком", "лодка, сундук.");
-        put("тележка", "5 железных слитков, форма U.");
-        put("тележка с сундуком", "тележка, сундук.");
-        put("тележка с печью", "тележка, печь.");
-        put("тележка с воронкой", "тележка, воронка.");
-        put("тележка с динамитом", "тележка, динамит.");
-        put("тележка с спавнером", "тележка, спавнер.");
-        put("седло", "кожа и железные слитки.");
-        put("поводок", "4 нити, 1 слизь.");
-        put("именная бирка", "бумага и нить.");
-        put("колокол", "3 золотых слитка сверху, 1 железный блок снизу.");
-        put("фонарь душ", "8 железных самородков, факел душ по центру.");
-        put("факел душ", "палка, уголь душ или песок душ.");
-        put("костёр", "3 палки, 3 бревна, 1 уголь.");
-        put("костёр душ", "3 палки, 3 бревна, 1 уголь душ.");
-        put("камень", "4 кварца.");
-        put("кварцевый блок", "4 кварца.");
-        put("кварцевые ступени", "6 кварцевых блоков.");
-        put("кварцевая плита", "3 кварцевых блока.");
-        put("кварцевая колонна", "2 кварцевых блока.");
-        put("гладкий кварц", "кварцевый блок.");
-        put("кирпичи", "4 кирпича.");
-        put("каменные кирпичи", "4 камня.");
-        put("потрескавшиеся каменные кирпичи", "каменные кирпичи.");
-        put("мшистые каменные кирпичи", "каменные кирпичи, лианы или мох.");
-        put("адский кирпич", "4 адских кирпича.");
-        put("адские кирпичные ступени", "6 адских кирпичей.");
-        put("адская кирпичная плита", "3 адских кирпича.");
-        put("адский забор", "6 адских кирпичей.");
-        put("пурпуровый блок", "4 плода хоруса.");
-        put("пурпуровые ступени", "6 пурпуровых блоков.");
-        put("пурпуровая плита", "3 пурпуровых блока.");
-        put("пурпуровый столб", "2 пурпуровых блока.");
-        put("энд стержень", "огненный стержень, плод хоруса.");
-        put("глаз эндера", "жемчуг эндера, огненный порошок.");
-        put("око паука", "паучий глаз, гриб, сахар.");
-        put("огненный порошок", "огненный стержень.");
-        put("магма крем", "слизь, огненный порошок.");
-        put("книга", "3 бумаги, кожа.");
-        put("книга с пером", "книга, перо, чернильный мешок.");
-        put("бумага", "3 сахарных тростника.");
-        put("чернила", "чернильный мешок.");
-        put("мешок", "кожа и нити.");
-        put("цветной мешок", "мешок, краситель.");
-        put("ковёр", "2 шерсти.");
-        put("окрашенная шерсть", "шерсть, краситель.");
-        put("стекло", "песок.");
-        put("окрашенное стекло", "8 стекла, краситель.");
-        put("стеклянная панель", "6 стекла.");
-        put("бетон", "4 песка, 4 гравия, краситель.");
-        put("бетонный порошок", "4 песка, 4 гравия, краситель.");
-        put("терракота", "глина.");
-        put("окрашенная терракота", "8 терракоты, краситель.");
-        put("глазурованная керамика", "окрашенная терракота.");
-        put("лестница из верёвок", "7 палок.");
-        put("знак", "6 досок, палка.");
-        put("подвесной знак", "2 цепи, 6 обтёсанных брёвен.");
-        put("рамка светящаяся", "рамка, светокамень.");
-        put("кристалл аметиста", "осколки аметиста.");
-        put("подзорная труба", "2 медных слитка, осколок аметиста.");
-        put("громоотвод", "3 медных слитка.");
-        put("молниеотвод", "3 медных слитка.");
-        put("медный блок", "9 медных слитков.");
-        put("резной медный блок", "4 медных блока.");
-        put("медные ступени", "6 медных блоков.");
-        put("медная плита", "3 медных блока.");
-        put("кисть", "перо, палка, медный слиток.");
-        put("арфа", "8 досок, 1 редстоун.");
-        put("ноутблок", "8 досок, 1 редстоун.");
-        put("тотем бессмертия", "золотые слитки и изумруды.");
-        put("изумрудный блок", "9 изумрудов.");
-        put("сахар", "сахарный тростник.");
-        put("печенье", "2 пшеницы, какао-бобы.");
-        put("торт", "3 молока, 2 сахара, яйцо, 3 пшеницы.");
-        put("тыквенный пирог", "тыква, яйцо, сахар.");
-        put("хлеб", "3 пшеницы.");
-        put("золотое яблоко", "яблоко, 8 золотых слитков.");
-        put("зачарованное яблоко", "яблоко, 8 золотых блоков.");
-        put("флаг", "6 шерсти, палка.");
-        put("узор флага", "бумага и предмет.");
-        put("череп визера", "3 черепа визера, 4 песка душ.");
+    private static final String[] CRAFT_HINTS = {
+            "craft",
+            "recipe",
+            "\u0441\u043a\u0440\u0430\u0444\u0442",
+            "\u043a\u0440\u0430\u0444\u0442",
+            "\u0440\u0435\u0446\u0435\u043f\u0442"
+    };
+    private static final String[] CRAFT_EXACT_PREFIXES = {
+            "craft exact ",
+            "recipe exact ",
+            "\u043a\u0440\u0430\u0444\u0442 \u0442\u043e\u0447\u043d\u043e ",
+            "\u0440\u0435\u0446\u0435\u043f\u0442 \u0442\u043e\u0447\u043d\u043e "
+    };
 
+    private static final String[] LEADING_FILLERS = {
+            "\u043d\u0430 ",
+            "\u0434\u043b\u044f ",
+            "\u0438\u0437 ",
+            "the ",
+            "a ",
+            "an "
+    };
+    private static final int MAX_MATCHES = 6;
+    private static final String CRAFT_EXACT_COMMAND_PREFIX = "/ai craft exact ";
+
+    // Главная точка входа
+    public static Component handleCraftRequest(String rawName, @Nullable Level level) {
+
+        if (rawName == null || rawName.isBlank())
+            return Component.literal("Укажи предмет.");
+
+        if (level == null)
+            return Component.literal("Мир не загружен.");
+
+        List<Item> matches = findMatchingItems(rawName);
+
+        if (matches.isEmpty())
+            return Component.literal("Предмет не найден.");
+
+        if (matches.size() == 1)
+            return Component.literal(getRecipeText(matches.get(0), level));
+
+        return buildDisambiguationMessage(matches);
     }
 
-    // =====================================================
+    @Nullable
+    public static Component buildCraftReplyIfRequested(String rawMessage, @Nullable Level level) {
+        CraftRequest request = parseCraftRequest(rawMessage);
+        if (request == null) {
+            return null;
+        }
+        return request.exactMatch
+                ? handleCraftRequestExact(request.itemName, level)
+                : handleCraftRequest(request.itemName, level);
+    }
 
-    public static @Nullable String getRecipe(@Nullable String rawItem) {
-        if (rawItem == null || rawItem.isBlank()) return null;
-
-        String item = normalizeItem(rawItem);
-
-        // точное совпадение
-        if (RECIPES.containsKey(item)) {
-            return RECIPES.get(item);
+    @Nullable
+    public static String getRecipe(String rawName) {
+        if (rawName == null || rawName.isBlank()) {
+            return null;
         }
 
-        // частичное совпадение
-        for (Map.Entry<String, String> e : RECIPES.entrySet()) {
-            if (e.getKey().startsWith(item) || item.startsWith(e.getKey())) {
-                return e.getValue();
+        Level level = resolveRecipeLevel();
+        if (level == null) {
+            return null;
+        }
+
+        List<Item> matches = findMatchingItems(rawName);
+        if (matches.size() != 1) {
+            return null;
+        }
+
+        return getRecipeText(matches.get(0), level);
+    }
+
+    private static Component handleCraftRequestExact(String rawName, @Nullable Level level) {
+        if (rawName == null || rawName.isBlank()) {
+            return Component.literal("\u0423\u043a\u0430\u0436\u0438 \u043f\u0440\u0435\u0434\u043c\u0435\u0442.");
+        }
+
+        if (level == null) {
+            return Component.literal("\u041c\u0438\u0440 \u043d\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d.");
+        }
+
+        List<Item> exactMatches = findExactMatchingItems(rawName);
+        if (exactMatches.isEmpty()) {
+            return handleCraftRequest(rawName, level);
+        }
+
+        if (exactMatches.size() == 1) {
+            return Component.literal(getRecipeText(exactMatches.get(0), level));
+        }
+
+        return buildDisambiguationMessage(exactMatches.stream().limit(MAX_MATCHES).collect(Collectors.toList()));
+    }
+
+    @Nullable
+    private static Level resolveRecipeLevel() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server == null) {
+            return null;
+        }
+        return server.overworld();
+    }
+
+    @Nullable
+    private static CraftRequest parseCraftRequest(String rawMessage) {
+        if (rawMessage == null || rawMessage.isBlank()) {
+            return null;
+        }
+
+        String normalized = rawMessage
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        if (normalized.isBlank()) {
+            return null;
+        }
+
+        for (String prefix : CRAFT_EXACT_PREFIXES) {
+            if (normalized.startsWith(prefix)) {
+                String itemName = cleanupItemName(normalized.substring(prefix.length()));
+                return itemName == null ? null : new CraftRequest(itemName, true);
             }
+        }
+
+        for (String prefix : CRAFT_PREFIXES) {
+            if (normalized.startsWith(prefix)) {
+                String itemName = cleanupItemName(normalized.substring(prefix.length()));
+                return itemName == null ? null : new CraftRequest(itemName, false);
+            }
+        }
+
+        for (String hint : CRAFT_HINTS) {
+            int hintIndex = normalized.indexOf(hint);
+            if (hintIndex < 0) {
+                continue;
+            }
+
+            int start = hintIndex + hint.length();
+            if (start >= normalized.length()) {
+                return null;
+            }
+            String itemName = cleanupItemName(normalized.substring(start));
+            return itemName == null ? null : new CraftRequest(itemName, false);
         }
 
         return null;
     }
 
-    // =====================================================
+    @Nullable
+    private static String cleanupItemName(String rawItemName) {
+        if (rawItemName == null) {
+            return null;
+        }
 
-    private static void put(String key, String value) {
-        RECIPES.put(normalizeItem(key), value);
+        String itemName = rawItemName.trim();
+        if (itemName.isBlank()) {
+            return null;
+        }
+
+        boolean changed;
+        do {
+            changed = false;
+            for (String filler : LEADING_FILLERS) {
+                if (itemName.startsWith(filler)) {
+                    itemName = itemName.substring(filler.length()).trim();
+                    changed = true;
+                }
+            }
+        } while (changed && !itemName.isBlank());
+
+        return itemName.isBlank() ? null : itemName;
     }
 
-    /**
-     * Нормализует ТОЛЬКО название предмета.
-     * Никаких глаголов, никаких "как", никаких "скрафтить".
-     */
-    private static @NotNull String normalizeItem(@NotNull String input) {
-        String s = input
-                .toLowerCase()
-                .replaceAll("[^а-яa-z ]", "")
-                .trim();
+    // -------- Поиск предметов --------
 
-        // специальные формы
-        if (s.startsWith("печ")) return "печь";
-        if (s.startsWith("фак")) return "факел";
-        if (s.startsWith("верс")) return "верстак";
+    private static List<Item> findMatchingItems(String raw) {
+        String search = raw.toLowerCase(Locale.ROOT).trim();
+        if (search.isBlank()) {
+            return Collections.emptyList();
+        }
 
-        // падежи
-        String[] endings = {
-                "ами", "ями",
-                "ов", "ев",
-                "ах", "ях",
-                "у", "ю",
-                "а", "я",
-                "е",
-                "ь"
-        };
+        List<Item> exact = new ArrayList<>();
+        List<Item> starts = new ArrayList<>();
+        List<Item> tokenContains = new ArrayList<>();
+        List<Item> contains = new ArrayList<>();
 
-        for (String end : endings) {
-            if (s.length() > 3 && s.endsWith(end)) {
-                s = s.substring(0, s.length() - end.length());
-                break;
+        for (Item item : ForgeRegistries.ITEMS.getValues()) {
+
+            ItemStack stack = new ItemStack(item);
+            String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT).trim();
+
+            if (name.equals(search))
+                exact.add(item);
+            else if (name.startsWith(search))
+                starts.add(item);
+            else if (containsAsWord(name, search))
+                tokenContains.add(item);
+            else if (name.contains(search))
+                contains.add(item);
+        }
+
+        if (!exact.isEmpty()) {
+            LinkedHashSet<Item> related = new LinkedHashSet<>();
+            related.addAll(exact);
+            related.addAll(starts);
+            related.addAll(tokenContains);
+
+            if (related.size() > 1) {
+                return related.stream().limit(MAX_MATCHES).collect(Collectors.toList());
+            }
+            return exact;
+        }
+
+        if (!starts.isEmpty()) {
+            return starts.stream().limit(MAX_MATCHES).collect(Collectors.toList());
+        }
+
+        List<Item> fallback = new ArrayList<>(tokenContains);
+        fallback.addAll(contains);
+        return fallback.stream().limit(MAX_MATCHES).collect(Collectors.toList());
+    }
+
+    private static List<Item> findExactMatchingItems(String raw) {
+        String search = raw.toLowerCase(Locale.ROOT).trim();
+        if (search.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        List<Item> exact = new ArrayList<>();
+        for (Item item : ForgeRegistries.ITEMS.getValues()) {
+            ItemStack stack = new ItemStack(item);
+            String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT).trim();
+            if (name.equals(search)) {
+                exact.add(item);
             }
         }
 
-        return s.trim();
+        return exact;
+    }
+
+    private static boolean containsAsWord(String name, String search) {
+        return name.startsWith(search + " ")
+                || name.endsWith(" " + search)
+                || name.contains(" " + search + " ");
+    }
+
+    // -------- Сообщение уточнения --------
+
+    private static Component buildDisambiguationMessage(List<Item> matches) {
+
+        MutableComponent message = Component.literal("Уточни, что именно нужно скрафтить:\n");
+
+
+        for (Item item : matches) {
+
+            ItemStack stack = new ItemStack(item);
+            String name = stack.getHoverName().getString();
+
+            MutableComponent clickable = Component.literal("• " + name + "\n")
+                    .setStyle(Style.EMPTY
+                            .withClickEvent(new ClickEvent(
+                                    ClickEvent.Action.RUN_COMMAND,
+                                    CRAFT_EXACT_COMMAND_PREFIX + name
+                            ))
+                            .withHoverEvent(new HoverEvent(
+                                    HoverEvent.Action.SHOW_TEXT,
+                                    Component.literal("Нажми чтобы выбрать")
+                            ))
+                    );
+
+            message = message.append(clickable);
+        }
+
+        return message;
+    }
+
+    // -------- Получение текста рецепта --------
+
+    private static String getRecipeText(Item item, Level level) {
+
+        Collection<Recipe<?>> recipes = level.getRecipeManager().getRecipes();
+
+        List<String> results = new ArrayList<>();
+
+        for (Recipe<?> recipe : recipes) {
+
+            ItemStack result = recipe.getResultItem(level.registryAccess());
+
+            if (result.isEmpty()) continue;
+
+            if (result.getItem() == item) {
+                results.add(formatRecipe(recipe, level));
+            }
+        }
+
+        if (results.isEmpty())
+            return "Рецепт не найден.";
+
+        return String.join("\n\n", results);
+    }
+
+    // -------- Форматирование рецепта --------
+
+    private static String formatRecipe(Recipe<?> recipe, Level level) {
+
+        StringBuilder sb = new StringBuilder();
+
+        ItemStack result = recipe.getResultItem(level.registryAccess());
+
+        sb.append("Предмет: ")
+                .append(result.getHoverName().getString())
+                .append("\n");
+
+        if (recipe instanceof ShapedRecipe shaped) {
+
+            sb.append("Тип: Верстак 3x3\n");
+
+            int width = shaped.getWidth();
+            int height = shaped.getHeight();
+
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+
+                    int index = y * width + x;
+                    Ingredient ing = shaped.getIngredients().get(index);
+
+                    sb.append(getIngredientName(ing)).append(" | ");
+                }
+                sb.append("\n");
+            }
+
+        } else if (recipe instanceof ShapelessRecipe shapeless) {
+
+            sb.append("Тип: Без формы\n");
+
+            for (Ingredient ing : shapeless.getIngredients()) {
+                sb.append("- ")
+                        .append(getIngredientName(ing))
+                        .append("\n");
+            }
+
+        } else if (recipe instanceof AbstractCookingRecipe cooking) {
+
+            sb.append("Тип: Плавка\n");
+            sb.append("Ингредиент: ")
+                    .append(getIngredientName(cooking.getIngredients().get(0)))
+                    .append("\n");
+            sb.append("Время: ")
+                    .append(cooking.getCookingTime() / 20)
+                    .append(" сек.\n");
+
+        } else {
+            sb.append("Тип: Особый (модовый рецепт)\n");
+        }
+
+        return sb.toString();
+    }
+
+    private static String getIngredientName(Ingredient ingredient) {
+
+        ItemStack[] stacks = ingredient.getItems();
+
+        if (stacks.length == 0)
+            return "Пусто";
+
+        return stacks[0].getHoverName().getString();
+    }
+
+    private record CraftRequest(String itemName, boolean exactMatch) {
     }
 }

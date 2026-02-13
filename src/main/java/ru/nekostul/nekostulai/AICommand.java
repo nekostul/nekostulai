@@ -13,6 +13,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import ru.nekostul.nekostulai.ai.AIContext;
 import ru.nekostul.nekostulai.ai.AIManager;
 import ru.nekostul.nekostulai.ai.PlayerContext;
+import ru.nekostul.nekostulai.ai.nekostuloffline.CraftHelper;
 import ru.nekostul.nekostulai.ai.nekostuloffline.nekostulClient;
 import ru.nekostul.nekostulai.bugreport.BugReportService;
 import java.lang.management.GarbageCollectorMXBean;
@@ -115,6 +116,14 @@ public class AICommand {
                                                             "Формат ответа:\n" +
                                                             "- Только текст ответа\n" +
                                                             "- Кратко и по делу\n\n" +
+                                                            "Крафт и получение предметов:\n" +
+                                                            "- Если игрок спрашивает как скрафтить предмет или как его создать — НЕ объясняй рецепт сам\n" +
+                                                            "- В таком случае направь игрока использовать команду: /ai craft <ТОЧНОЕ игровое название предмета>\n" +
+                                                            "- Используй строго официальные игровые названия предметов, без синонимов и перефразирования\n" +
+                                                            "- Не изменяй названия (например: не \"красный факел\", а \"редстоуновый факел\")\n" +
+                                                            "- Если игрок пишет разговорное название, преобразуй его в правильное игровое\n" +
+                                                            "- Не придумывай рецепты и не описывай ингредиенты\n" +
+                                                            "- Если предмет не связан с крафтом (совет, применение, автоматизация) — отвечай сам\n\n" +
                                                             "Ответ:\n";
 
 
@@ -210,6 +219,7 @@ public class AICommand {
                                                             "§7/ai §8- §fоткрыть главное меню\n" +
                                                             "§7/ai help §8- §fпоказать это сообщение\n" +
                                                             "§7/ai ask §8- §fзадать вопрос ИИ §8(нужен API-ключ в конфиге)\n" +
+                                                            "\u00A77/ai craft <\u043f\u0440\u0435\u0434\u043c\u0435\u0442> \u00A78- \u00A7f\u043f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u043a\u0440\u0430\u0444\u0442 \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u0430\n" +
                                                             "§7/ai lag §8- §fбыстрый анализ лагов\n" +
                                                             "§7/ai ping §8- §fпроверка соединения §8(ИИ / прокси)\n" +
                                                             "§7/ai bug <сообщение> §8- §fотправить баг-репорт\n" +
@@ -500,10 +510,43 @@ public class AICommand {
         );
             dispatcher.register(
                     Commands.literal("ai")
+                            .then(Commands.literal("craft")
+                                    .then(Commands.argument("item", StringArgumentType.greedyString())
+                                            .executes(ctx -> {
+                                                String item = StringArgumentType.getString(ctx, "item");
+                                                Player player = ctx.getSource().getPlayerOrException();
+
+                                                Component craftReply = CraftHelper.buildCraftReplyIfRequested("craft " + item, player.level());
+                                                if (craftReply == null) {
+                                                    player.sendSystemMessage(
+                                                            Component.literal("\u00A76[nekostulAI] \u00A7f")
+                                                                    .append(Component.literal("\u0423\u043a\u0430\u0436\u0438 \u043f\u0440\u0435\u0434\u043c\u0435\u0442."))
+                                                    );
+                                                    return 0;
+                                                }
+
+                                                player.sendSystemMessage(
+                                                        Component.literal("\u00A76[nekostulAI] \u00A7f").append(craftReply)
+                                                );
+                                                return 1;
+                                            })
+                                    )
+                            )
                             .then(Commands.argument("text", StringArgumentType.greedyString())
                                     .executes(ctx -> {
                                         String text = StringArgumentType.getString(ctx, "text");
                                         Player player = ctx.getSource().getPlayerOrException();
+
+                                        Component craftReply = CraftHelper.buildCraftReplyIfRequested(text, player.level());
+                                        if (craftReply != null) {
+                                            player.sendSystemMessage(
+                                                    Component.literal("\u00A76[nekostulAI] \u00A7f").append(craftReply)
+                                            );
+                                            player.sendSystemMessage(
+                                                    Component.literal("\u00A76[nekostulAI] \u00A77\u041f\u043e\u0434\u0441\u043a\u0430\u0437\u043a\u0430: \u00A7f\u0435\u0441\u0442\u044c \u00A7e/ai craft <\u043f\u0440\u0435\u0434\u043c\u0435\u0442>\u00A7f.")
+                                            );
+                                            return 1;
+                                        }
 
                                         String reply = nekostulClient.respond(
                                                 player.getName().getString(),
