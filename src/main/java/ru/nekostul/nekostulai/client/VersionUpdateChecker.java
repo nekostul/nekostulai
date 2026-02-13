@@ -4,9 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.TickEvent;
@@ -31,7 +34,9 @@ import java.util.regex.Pattern;
 public class VersionUpdateChecker {
 
     private static final String MODRINTH_VERSIONS_URL = "https://api.modrinth.com/v2/project/nekostulai/version";
+    private static final String MODRINTH_VERSION_PAGE_URL_TEMPLATE = "https://modrinth.com/mod/nekostulai/version/%s";
     private static final String GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/nekostul/nekostulai/releases/latest";
+    private static final String GITHUB_RELEASES_FALLBACK_URL = "https://github.com/nekostul/nekostulai/releases/latest";
 
     private static final String TARGET_LOADER = "forge";
     private static final String TARGET_MINECRAFT_VERSION = "1.20.1";
@@ -80,16 +85,16 @@ public class VersionUpdateChecker {
                 return Optional.empty();
             }
 
-            String modrinthVersion = fetchLatestModrinthVersion();
-            String githubVersion = fetchLatestGithubVersion();
-            String newestVersion = pickNewestVersion(modrinthVersion, githubVersion);
+            ReleaseInfo modrinthRelease = fetchLatestModrinthRelease();
+            ReleaseInfo githubRelease = fetchLatestGithubRelease();
+            ReleaseInfo newestRelease = pickNewestRelease(modrinthRelease, githubRelease);
 
-            if (newestVersion == null) {
+            if (newestRelease == null) {
                 return Optional.empty();
             }
 
-            if (compareVersions(newestVersion, currentVersion) > 0) {
-                return Optional.of(new UpdateInfo(currentVersion, newestVersion));
+            if (compareVersions(newestRelease.version, currentVersion) > 0) {
+                return Optional.of(new UpdateInfo(currentVersion, newestRelease.version, newestRelease.sourceUrl));
             }
         } catch (Exception ignored) {
         }
@@ -103,7 +108,7 @@ public class VersionUpdateChecker {
                 .orElse("");
     }
 
-    private static String fetchLatestModrinthVersion() {
+    private static ReleaseInfo fetchLatestModrinthRelease() {
         try {
             HttpURLConnection connection = openGetConnection(MODRINTH_VERSIONS_URL);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
@@ -113,7 +118,7 @@ public class VersionUpdateChecker {
             String response = readResponseBody(connection);
             JsonArray versions = JsonParser.parseString(response).getAsJsonArray();
 
-            String latest = null;
+            ReleaseInfo latest = null;
             for (JsonElement element : versions) {
                 if (!element.isJsonObject()) {
                     continue;
@@ -130,8 +135,14 @@ public class VersionUpdateChecker {
                     continue;
                 }
 
-                String candidate = getString(version, "version_number");
-                latest = pickNewestVersion(latest, candidate);
+                String candidateVersion = getString(version, "version_number");
+                if (candidateVersion == null || candidateVersion.isBlank()) {
+                    continue;
+                }
+
+                String versionId = getString(version, "id");
+                ReleaseInfo candidate = new ReleaseInfo(candidateVersion, buildModrinthVersionUrl(versionId));
+                latest = pickNewestRelease(latest, candidate);
             }
 
             return latest;
@@ -140,7 +151,7 @@ public class VersionUpdateChecker {
         }
     }
 
-    private static String fetchLatestGithubVersion() {
+    private static ReleaseInfo fetchLatestGithubRelease() {
         try {
             HttpURLConnection connection = openGetConnection(GITHUB_LATEST_RELEASE_URL);
             connection.setRequestProperty("Accept", "application/vnd.github+json");
@@ -154,14 +165,29 @@ public class VersionUpdateChecker {
             JsonObject release = JsonParser.parseString(response).getAsJsonObject();
 
             String tagName = getString(release, "tag_name");
-            if (tagName != null && !tagName.isBlank()) {
-                return tagName;
+            String version = tagName;
+            if (version == null || version.isBlank()) {
+                version = getString(release, "name");
+            }
+            if (version == null || version.isBlank()) {
+                return null;
             }
 
-            return getString(release, "name");
+            String releaseUrl = getString(release, "html_url");
+            if (releaseUrl == null || releaseUrl.isBlank()) {
+                releaseUrl = GITHUB_RELEASES_FALLBACK_URL;
+            }
+            return new ReleaseInfo(version, releaseUrl);
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private static String buildModrinthVersionUrl(String versionId) {
+        if (versionId == null || versionId.isBlank()) {
+            return "https://modrinth.com/mod/nekostulai/versions";
+        }
+        return String.format(MODRINTH_VERSION_PAGE_URL_TEMPLATE, versionId);
     }
 
     private static HttpURLConnection openGetConnection(String url) throws Exception {
@@ -222,24 +248,35 @@ public class VersionUpdateChecker {
     }
 
     private static void sendUpdateMessage(LocalPlayer player, UpdateInfo update) {
-        player.sendSystemMessage(Component.literal(
+        MutableComponent message = Component.literal(
                 "\u00A76[nekostulAI] \u00A7eДоступна новая версия: \u00A7f"
                         + update.latestVersion
                         + "\u00A7e (у тебя \u00A7f"
                         + update.currentVersion
                         + "\u00A7e)."
-        ));
+        );
+
+        if (update.sourceUrl != null && !update.sourceUrl.isBlank()) {
+            message.append(Component.literal(" "));
+            message.append(Component.literal("[обновить]")
+                    .withStyle(style -> style
+                            .withColor(ChatFormatting.AQUA)
+                            .withUnderlined(true)
+                            .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, update.sourceUrl))));
+        }
+
+        player.sendSystemMessage(message);
     }
 
-    private static String pickNewestVersion(String first, String second) {
-        if (first == null || first.isBlank()) {
-            return (second == null || second.isBlank()) ? null : second;
+    private static ReleaseInfo pickNewestRelease(ReleaseInfo first, ReleaseInfo second) {
+        if (first == null || first.version == null || first.version.isBlank()) {
+            return (second == null || second.version == null || second.version.isBlank()) ? null : second;
         }
-        if (second == null || second.isBlank()) {
+        if (second == null || second.version == null || second.version.isBlank()) {
             return first;
         }
 
-        return compareVersions(first, second) >= 0 ? first : second;
+        return compareVersions(first.version, second.version) >= 0 ? first : second;
     }
 
     private static int compareVersions(String left, String right) {
@@ -286,6 +323,9 @@ public class VersionUpdateChecker {
         return result;
     }
 
-    private record UpdateInfo(String currentVersion, String latestVersion) {
+    private record ReleaseInfo(String version, String sourceUrl) {
+    }
+
+    private record UpdateInfo(String currentVersion, String latestVersion, String sourceUrl) {
     }
 }
