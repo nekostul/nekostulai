@@ -4,7 +4,7 @@ license="MIT"
 
 [[mods]]
 modId = "nekostulai"
-version = "4.3"
+version = "4.4"
 displayName = "nekostulAI"
 logoFile="logo.png"
 authors = "nekostul"
