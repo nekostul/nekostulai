@@ -25,6 +25,10 @@ public final class CraftChoiceCleanup {
     private CraftChoiceCleanup() {
     }
 
+    public static void removeLatestCraftChoiceMessageNow() {
+        removeLatestCraftChoiceMessage();
+    }
+
     @SubscribeEvent
     public static void onClientChatReceived(ClientChatReceivedEvent event) {
         if (event == null || event.getMessage() == null) {
